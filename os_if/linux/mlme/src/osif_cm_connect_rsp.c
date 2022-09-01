@@ -32,6 +32,10 @@
 #include "wlan_mlo_mgr_sta.h"
 #include "wlan_mlo_mgr_cmn.h"
 
+#ifdef CONFIG_UCI
+#include <linux/uci/uci.h>
+#endif
+
 #ifdef CONN_MGR_ADV_FEATURE
 void osif_cm_get_assoc_req_ie_data(struct element_info *assoc_req,
 				   size_t *ie_data_len,
@@ -847,6 +851,19 @@ QDF_STATUS osif_connect_handler(struct wlan_objmgr_vdev *vdev,
 		       rsp->connect_status ? "FAILURE" : "SUCCESS", rsp->cm_id,
 		       rsp->reason, rsp->status_code, rsp->is_reassoc);
 
+#ifdef CONFIG_UCI
+	if (!rsp->connect_status) {
+		{
+                        char ssidName[WLAN_SSID_MAX_LEN+1];
+                        int i;
+                        for (i=0; i<rsp->ssid.length; i++) {
+                                ssidName[i] = rsp->ssid.ssid[i];
+                        }
+                        ssidName[rsp->ssid.length]='\0';
+                        uci_set_current_ssid(ssidName);
+		}
+	}
+#endif
 	osif_check_and_unlink_bss(vdev, osif_priv, rsp);
 
 	status = osif_validate_connect_and_reset_src_id(osif_priv, rsp);
